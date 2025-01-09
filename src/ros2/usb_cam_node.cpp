@@ -403,6 +403,7 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %.6f seconds", duration.count());
 
   auto stamp = m_camera->get_image_timestamp();
+  RCLCPP_INFO(this->get_logger(), "Mjpeg Image age: %ld seconds, %ld nanoseconds", stamp.tv_sec, stamp.tv_nsec);
   m_compressed_img_msg->header.stamp.sec = stamp.tv_sec;
   m_compressed_img_msg->header.stamp.nanosec = stamp.tv_nsec;
 
