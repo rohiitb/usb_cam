@@ -369,9 +369,15 @@ bool UsbCamNode::take_and_send_image()
   }
 
   // grab the image, pass image msg buffer to fill
+  auto start = std::chrono::high_resolution_clock::now();
   m_camera->get_image(reinterpret_cast<char *>(&m_image_msg->data[0]));
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  RCLCPP_INFO(this->get_logger(), "Image capture took %ld microseconds", duration.count());
 
   auto stamp = m_camera->get_image_timestamp();
+  RCLCPP_INFO(this->get_logger(), "Image age: %ld seconds, %ld nanoseconds", stamp.tv_sec, stamp.tv_nsec);
+
   m_image_msg->header.stamp.sec = stamp.tv_sec;
   m_image_msg->header.stamp.nanosec = stamp.tv_nsec;
 
@@ -390,7 +396,11 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   }
 
   // grab the image, pass image msg buffer to fill
+  auto start = std::chrono::high_resolution_clock::now();
   m_camera->get_image(reinterpret_cast<char *>(&m_compressed_img_msg->data[0]));
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %ld microseconds", duration.count());
 
   auto stamp = m_camera->get_image_timestamp();
   m_compressed_img_msg->header.stamp.sec = stamp.tv_sec;
