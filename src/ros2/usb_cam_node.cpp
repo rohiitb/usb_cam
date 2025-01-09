@@ -46,7 +46,7 @@ UsbCamNode::UsbCamNode(const rclcpp::NodeOptions & node_options)
   m_compressed_img_msg(nullptr),
   m_image_publisher(std::make_shared<image_transport::CameraPublisher>(
       image_transport::create_camera_publisher(this, BASE_TOPIC_NAME,
-      rclcpp::QoS {100}.get_rmw_qos_profile()))),
+      rclcpp::QoS(1).reliable().get_rmw_qos_profile()))),
   m_compressed_image_publisher(nullptr),
   m_compressed_cam_info_publisher(nullptr),
   m_parameters(),
@@ -176,10 +176,12 @@ void UsbCamNode::init()
     m_compressed_img_msg->header.frame_id = m_parameters.frame_id;
     m_compressed_image_publisher =
       this->create_publisher<sensor_msgs::msg::CompressedImage>(
-      std::string(BASE_TOPIC_NAME) + "/compressed", rclcpp::QoS(100));
+      std::string(BASE_TOPIC_NAME) + "/compressed", 
+      rclcpp::QoS(1).reliable());
     m_compressed_cam_info_publisher =
       this->create_publisher<sensor_msgs::msg::CameraInfo>(
-      "camera_info", rclcpp::QoS(100));
+      "camera_info", 
+      rclcpp::QoS(1).reliable());
   }
 
   m_image_msg->header.frame_id = m_parameters.frame_id;
@@ -383,10 +385,6 @@ bool UsbCamNode::take_and_send_image()
   *m_camera_info_msg = m_camera_info->getCameraInfo();
   m_camera_info_msg->header = m_image_msg->header;
 
-  auto end_here = std::chrono::high_resolution_clock::now();
-  auto duration_here = std::chrono::duration_cast<std::chrono::duration<double>>(end_here - end);
-  RCLCPP_INFO(this->get_logger(), "Image publish took %.6f seconds", duration_here.count());
-
   m_image_publisher->publish(*m_image_msg, *m_camera_info_msg);
   return true;
 }
@@ -411,12 +409,8 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   m_compressed_img_msg->header.stamp.sec = stamp.tv_sec;
   m_compressed_img_msg->header.stamp.nanosec = stamp.tv_nsec;
 
-  // *m_camera_info_msg = m_camera_info->getCameraInfo();
+  *m_camera_info_msg = m_camera_info->getCameraInfo();
   m_camera_info_msg->header = m_compressed_img_msg->header;
-
-  auto end_here = std::chrono::high_resolution_clock::now();
-  auto duration_here = std::chrono::duration_cast<std::chrono::duration<double>>(end_here - end);
-  RCLCPP_INFO(this->get_logger(), "Mjpeg Image publish took %.6f seconds", duration_here.count());
 
   m_compressed_image_publisher->publish(*m_compressed_img_msg);
   m_compressed_cam_info_publisher->publish(*m_camera_info_msg);
