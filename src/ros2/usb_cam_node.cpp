@@ -375,11 +375,7 @@ bool UsbCamNode::take_and_send_image()
   auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
   RCLCPP_INFO(this->get_logger(), "Image capture took %.6f seconds", duration.count());
 
-  auto start_stamp = std::chrono::high_resolution_clock::now();
   auto stamp = m_camera->get_image_timestamp();
-  auto end_stamp = std::chrono::high_resolution_clock::now();
-  auto duration_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(end_stamp - start_stamp);
-  RCLCPP_INFO(this->get_logger(), "Image get_stamp took %.6f seconds", duration_stamp.count());
 
   m_image_msg->header.stamp.sec = stamp.tv_sec;
   m_image_msg->header.stamp.nanosec = stamp.tv_nsec;
@@ -405,20 +401,20 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
   RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %.6f seconds", duration.count());
 
-  auto start_mjpeg = std::chrono::high_resolution_clock::now();
   auto stamp = m_camera->get_image_timestamp();
-  auto end_mjpeg = std::chrono::high_resolution_clock::now();
-  auto duration_mjpeg = std::chrono::duration_cast<std::chrono::duration<double>>(end_mjpeg - start_mjpeg);
-  RCLCPP_INFO(this->get_logger(), "Mjpeg get_stamp took %.6f seconds", duration_mjpeg.count());
 
   m_compressed_img_msg->header.stamp.sec = stamp.tv_sec;
   m_compressed_img_msg->header.stamp.nanosec = stamp.tv_nsec;
 
-  *m_camera_info_msg = m_camera_info->getCameraInfo();
+  // *m_camera_info_msg = m_camera_info->getCameraInfo();
   m_camera_info_msg->header = m_compressed_img_msg->header;
 
   m_compressed_image_publisher->publish(*m_compressed_img_msg);
   m_compressed_cam_info_publisher->publish(*m_camera_info_msg);
+  // Get the current time
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+  RCLCPP_INFO(this->get_logger(), "Mjpeg Image publish took %.6f seconds", duration.count());
   return true;
 }
 
