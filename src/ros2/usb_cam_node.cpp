@@ -386,6 +386,11 @@ bool UsbCamNode::take_and_send_image()
   m_camera_info_msg->header = m_image_msg->header;
 
   m_image_publisher->publish(*m_image_msg, *m_camera_info_msg);
+
+  auto end_here = std::chrono::high_resolution_clock::now();
+  auto duration_here = std::chrono::duration_cast<std::chrono::duration<double>>(end_here - end);
+  RCLCPP_INFO(this->get_logger(), "Image publish took %.6f seconds", duration_here.count());
+
   return true;
 }
 
@@ -414,6 +419,10 @@ bool UsbCamNode::take_and_send_image_mjpeg()
 
   m_compressed_image_publisher->publish(*m_compressed_img_msg);
   m_compressed_cam_info_publisher->publish(*m_camera_info_msg);
+
+  auto end_here = std::chrono::high_resolution_clock::now();
+  auto duration_here = std::chrono::duration_cast<std::chrono::duration<double>>(end_here - end);
+  RCLCPP_INFO(this->get_logger(), "Mjpeg Image publish took %.6f seconds", duration_here.count());
   return true;
 }
 
