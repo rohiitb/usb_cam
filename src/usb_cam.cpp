@@ -49,6 +49,7 @@ extern "C" {
 #include "usb_cam/usb_cam.hpp"
 #include "usb_cam/conversions.hpp"
 #include "usb_cam/utils.hpp"
+#include "usb_cam/timing.hpp"
 
 
 namespace usb_cam
