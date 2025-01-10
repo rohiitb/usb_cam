@@ -107,41 +107,74 @@ void UsbCam::read_frame()
       }
       return process_image(m_buffers[0].start, m_image.data, len);
     case io_method_t::IO_METHOD_MMAP:
-      CLEAR(buf);
-      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      m_image.v4l2_fmt.type = buf.type;
-      buf.memory = V4L2_MEMORY_MMAP;
+      {  // Added scope for timing variables
+        auto start_total = std::chrono::high_resolution_clock::now();
+        
+        CLEAR(buf);
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        m_image.v4l2_fmt.type = buf.type;
+        buf.memory = V4L2_MEMORY_MMAP;
 
-      // Get current v4l2 pixel format
-      if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_G_FMT), &m_image.v4l2_fmt)) {
-        switch (errno) {
-          case EAGAIN:
-            return;
-          default:
-            throw std::runtime_error("Invalid v4l2 format");
+        // Get current v4l2 pixel format
+        auto start_fmt = std::chrono::high_resolution_clock::now();
+        if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_G_FMT), &m_image.v4l2_fmt)) {
+          switch (errno) {
+            case EAGAIN:
+              return;
+            default:
+              throw std::runtime_error("Invalid v4l2 format");
+          }
         }
-      }
-      /// Dequeue buffer with the new image
-      if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_DQBUF), &buf)) {
-        switch (errno) {
-          case EAGAIN:
-            return;
-          default:
-            throw std::runtime_error("Unable to retrieve frame with mmap");
+        auto end_fmt = std::chrono::high_resolution_clock::now();
+        std::cout << "Format query took: " 
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_fmt - start_fmt).count() 
+                  << "us\n";
+
+        // Dequeue buffer with the new image
+        auto start_dq = std::chrono::high_resolution_clock::now();
+        if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_DQBUF), &buf)) {
+          switch (errno) {
+            case EAGAIN:
+              return;
+            default:
+              throw std::runtime_error("Unable to retrieve frame with mmap");
+          }
         }
+        auto end_dq = std::chrono::high_resolution_clock::now();
+        std::cout << "Dequeue buffer took: " 
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_dq - start_dq).count() 
+                  << "us\n";
+
+        // Get timestamp from V4L2 image buffer
+        m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
+
+        assert(buf.index < m_number_of_buffers);
+        
+        // Process the image
+        auto start_process = std::chrono::high_resolution_clock::now();
+        process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
+        auto end_process = std::chrono::high_resolution_clock::now();
+        std::cout << "Process image took: " 
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_process - start_process).count() 
+                  << "us\n";
+
+        // Requeue buffer
+        auto start_q = std::chrono::high_resolution_clock::now();
+        if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_QBUF), &buf)) {
+          throw std::runtime_error("Unable to exchange buffer with the driver");
+        }
+        auto end_q = std::chrono::high_resolution_clock::now();
+        std::cout << "Requeue buffer took: " 
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_q - start_q).count() 
+                  << "us\n";
+
+        auto end_total = std::chrono::high_resolution_clock::now();
+        std::cout << "Total read_frame took: " 
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_total - start_total).count() 
+                  << "us\n\n";
+        
+        return;
       }
-
-      // Get timestamp from V4L2 image buffer
-      m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
-
-      assert(buf.index < m_number_of_buffers);
-      process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
-
-      /// Requeue buffer so it can be reused
-      if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_QBUF), &buf)) {
-        throw std::runtime_error("Unable to exchange buffer with the driver");
-      }
-      return;
     case io_method_t::IO_METHOD_USERPTR:
       CLEAR(buf);
 
