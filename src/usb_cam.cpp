@@ -643,8 +643,10 @@ void UsbCam::grab_image()
     std::cerr << "Select timeout, exiting..." << std::endl;
     throw "select timeout";
   }
-
+  usb_cam::Timer::start("Read frame capture");
   read_frame();
+  double duration = usb_cam::Timer::stop("Read frame capture");
+  std::cout << "Read frame capture took " << duration << " seconds" << std::endl;
 }
 
 // enables/disables auto focus
