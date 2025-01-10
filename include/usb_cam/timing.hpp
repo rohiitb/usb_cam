@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <mutex>
+#include <unordered_map>
 
 namespace usb_cam
 {
