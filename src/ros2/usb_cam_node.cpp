@@ -375,7 +375,7 @@ bool UsbCamNode::take_and_send_image()
   usb_cam::Timer::start("Image capture");
   m_camera->get_image(reinterpret_cast<char *>(&m_image_msg->data[0]));
   double duration = usb_cam::Timer::stop("Image capture");
-  RCLCPP_INFO(this->get_logger(), "Image capture took %.6f seconds", duration.count());
+  RCLCPP_INFO(this->get_logger(), "Image capture took %.6f seconds", duration);
 
   auto stamp = m_camera->get_image_timestamp();
 
@@ -402,7 +402,7 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   usb_cam::Timer::start("Mjpeg Image capture");
   m_camera->get_image(reinterpret_cast<char *>(&m_compressed_img_msg->data[0]));
   double duration = usb_cam::Timer::stop("Mjpeg Image capture");
-  RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %.6f seconds", duration.count());
+  RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %.6f seconds", duration);
 
   auto stamp = m_camera->get_image_timestamp();
 
