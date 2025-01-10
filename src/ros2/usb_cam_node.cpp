@@ -390,7 +390,7 @@ bool UsbCamNode::take_and_send_image()
   // Convert timespec to chrono time_point
   auto current_time = std::chrono::high_resolution_clock::now();
   auto duration_publish = usb_cam::utils::get_time_difference(stamp, current_time);
-  RCLCPP_INFO(this->get_logger(), "Time difference in publishing: %.6f seconds", duration_publish.count());
+  RCLCPP_INFO(this->get_logger(), "Time difference in publishing: %.6f seconds", duration_publish);
 
   return true;
 }
@@ -423,7 +423,7 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   // Convert timespec to chrono time_point
   auto current_time = std::chrono::high_resolution_clock::now();
   auto duration_publish = usb_cam::utils::get_time_difference(stamp, current_time);
-  RCLCPP_INFO(this->get_logger(), "Time difference in publishing mjpeg: %.6f seconds", duration_publish.count());
+  RCLCPP_INFO(this->get_logger(), "Time difference in publishing mjpeg: %.6f seconds", duration_publish);
 
   return true;
 }
