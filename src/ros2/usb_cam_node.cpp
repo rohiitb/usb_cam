@@ -372,10 +372,9 @@ bool UsbCamNode::take_and_send_image()
   }
 
   // grab the image, pass image msg buffer to fill
-  auto start = std::chrono::high_resolution_clock::now();
+  usb_cam::Timer::start("Image capture");
   m_camera->get_image(reinterpret_cast<char *>(&m_image_msg->data[0]));
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+  double duration = usb_cam::Timer::stop("Image capture");
   RCLCPP_INFO(this->get_logger(), "Image capture took %.6f seconds", duration.count());
 
   auto stamp = m_camera->get_image_timestamp();
@@ -400,10 +399,9 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   }
 
   // grab the image, pass image msg buffer to fill
-  auto start = std::chrono::high_resolution_clock::now();
+  usb_cam::Timer::start("Mjpeg Image capture");
   m_camera->get_image(reinterpret_cast<char *>(&m_compressed_img_msg->data[0]));
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+  double duration = usb_cam::Timer::stop("Mjpeg Image capture");
   RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %.6f seconds", duration.count());
 
   auto stamp = m_camera->get_image_timestamp();
