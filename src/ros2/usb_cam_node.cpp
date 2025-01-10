@@ -33,6 +33,7 @@
 #include <filesystem>
 #include "usb_cam/usb_cam_node.hpp"
 #include "usb_cam/utils.hpp"
+#include "usb_cam/timing.hpp"
 
 const char BASE_TOPIC_NAME[] = "image_raw";
 
