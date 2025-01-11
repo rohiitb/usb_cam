@@ -94,6 +94,7 @@ void UsbCam::read_frame()
   struct v4l2_buffer buf;
   unsigned int i;
   int len;
+  double duration, diff_timestamp_1, diff_timestamp_2;
 
   switch (m_io) {
     case io_method_t::IO_METHOD_READ:
@@ -135,16 +136,16 @@ void UsbCam::read_frame()
       // Get timestamp from V4L2 image buffer
       m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
 
-      auto diff_timestamp_1 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
+      diff_timestamp_1 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
       std::cout << "diff_timestamp_1: " << diff_timestamp_1 << std::endl;
 
       assert(buf.index < m_number_of_buffers);
       usb_cam::Timer::start("Process image");
       process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
-      double duration = usb_cam::Timer::stop("Process image");
+      duration = usb_cam::Timer::stop("Process image");
       std::cout << "duration: " << duration << std::endl;
 
-      auto diff_timestamp_2 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
+      diff_timestamp_2 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
       std::cout << "diff_timestamp_2: " << diff_timestamp_2 << std::endl;
 
       /// Requeue buffer so it can be reused
