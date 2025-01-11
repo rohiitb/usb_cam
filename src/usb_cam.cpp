@@ -161,6 +161,9 @@ void UsbCam::read_frame()
       // Get timestamp from V4L2 image buffer
       m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
 
+      auto diff_timestamp_1 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
+      std::cout << "diff_timestamp_1: " << diff_timestamp_1 << std::endl;
+
       for (i = 0; i < m_number_of_buffers; ++i) {
         if (buf.m.userptr == reinterpret_cast<uint64_t>(m_buffers[i].start) && \
           buf.length == m_buffers[i].length)
@@ -169,8 +172,15 @@ void UsbCam::read_frame()
         }
       }
 
+      auto diff_timestamp_2 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
+      std::cout << "diff_timestamp_2: " << diff_timestamp_2 << std::endl;
+
       assert(i < m_number_of_buffers);
       process_image(reinterpret_cast<const char *>(buf.m.userptr), m_image.data, buf.bytesused);
+
+      auto diff_timestamp_3 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
+      std::cout << "diff_timestamp_3: " << diff_timestamp_3 << std::endl;
+
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_QBUF), &buf)) {
         throw std::runtime_error("Unable to exchange buffer with driver");
       }
