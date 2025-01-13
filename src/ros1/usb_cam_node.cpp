@@ -58,7 +58,7 @@ public:
   bool m_auto_focus, m_auto_exposure, m_auto_white_balance;
   boost::shared_ptr<camera_info_manager::CameraInfoManager> m_camera_info;
 
-  std::shared_ptr<UsbCam> m_camera;
+  UsbCam m_camera;
 
   ros::ServiceServer m_service_start, m_service_stop;
 
@@ -67,7 +67,7 @@ public:
   {
     (void)req;
     (void)res;
-    m_camera->start_capturing();
+    m_camera.start_capturing();
     return true;
   }
 
@@ -76,27 +76,13 @@ public:
   {
     (void)req;
     (void)res;
-    m_camera->stop_capturing();
+    m_camera.stop_capturing();
     return true;
   }
 
   UsbCamNode()
   : m_node("~")
   {
-    // First initialize the camera
-    m_camera = std::make_shared<UsbCam>();
-    
-    // Configure the camera parameters
-    m_camera->set_video_device(m_video_device_name);
-    m_camera->set_io_method(m_io_method);
-    m_camera->set_pixel_format(m_pixel_format);
-    m_camera->set_image_width(m_image_width);
-    m_camera->set_image_height(m_image_height);
-    m_camera->set_framerate(m_framerate);
-
-    // Now start the camera
-    m_camera->start();
-
     // advertise the main image topic
     image_transport::ImageTransport it(m_node);
     m_image_pub = it.advertiseCamera("image_raw", 1);
@@ -165,7 +151,7 @@ public:
     }
 
     // start the camera
-    m_camera->start(
+    m_camera.start(
       m_video_device_name.c_str(), io_method, m_pixel_format_str, m_image_width,
       m_image_height, m_framerate);
 
@@ -174,36 +160,38 @@ public:
 
   virtual ~UsbCamNode()
   {
-    m_camera->shutdown();
+    m_camera.shutdown();
   }
 
   bool take_and_send_image()
   {
-    // Get the image from camera
-    auto image = m_camera->get_image();
-    if (!image) {
-      return false;
+    // grab the new image
+    auto new_image = m_camera.get_image();
+
+    // fill in the image message
+    m_image.header.stamp.sec = new_image->stamp.tv_sec;
+    m_image.header.stamp.nsec = new_image->stamp.tv_nsec;
+
+    // Only resize if required
+    if (m_image.data.size() != static_cast<size_t>(new_image->step * new_image->height)) {
+      m_image.width = new_image->width;
+      m_image.height = new_image->height;
+      m_image.encoding = new_image->encoding;
+      m_image.step = new_image->step;
+      m_image.data.resize(new_image->step * new_image->height);
     }
 
-    // Fill in the image message
-    m_image.header.stamp = ros::Time::now();
-    m_image.header.frame_id = m_camera_frame_id;
-    
-    // Resize the image message if needed
-    if (m_image.data.size() != image->data_size) {
-      m_image.width = image->width;
-      m_image.height = image->height;
-      m_image.encoding = image->encoding;
-      m_image.step = image->step;
-      m_image.data.resize(image->data_size);
-    }
+    // Fill in image data
+    memcpy(&m_image.data[0], new_image->image, m_image.data.size());
 
-    // Copy the image data
-    memcpy(&m_image.data[0], image->data.get(), image->data_size);
+    // grab the camera info
+    sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(m_camera_info->getCameraInfo()));
+    ci->header.frame_id = m_image.header.frame_id;
+    ci->header.stamp = m_image.header.stamp;
 
-    // Publish the image
-    m_image_pub.publish(m_image);
-    
+    // publish the image
+    m_image_pub.publish(m_image, *ci);
+
     return true;
   }
 
@@ -211,7 +199,7 @@ public:
   {
     ros::Rate loop_rate(this->m_framerate);
     while (m_node.ok()) {
-      if (m_camera->is_capturing()) {
+      if (m_camera.is_capturing()) {
         if (!take_and_send_image()) {ROS_WARN("USB camera did not respond in time.");}
       }
       ros::spinOnce();
@@ -224,49 +212,49 @@ public:
   {
     // set camera parameters
     if (m_brightness >= 0) {
-      m_camera->set_v4l_parameter("brightness", m_brightness);
+      m_camera.set_v4l_parameter("brightness", m_brightness);
     }
 
     if (m_contrast >= 0) {
-      m_camera->set_v4l_parameter("contrast", m_contrast);
+      m_camera.set_v4l_parameter("contrast", m_contrast);
     }
 
     if (m_saturation >= 0) {
-      m_camera->set_v4l_parameter("saturation", m_saturation);
+      m_camera.set_v4l_parameter("saturation", m_saturation);
     }
 
     if (m_sharpness >= 0) {
-      m_camera->set_v4l_parameter("sharpness", m_sharpness);
+      m_camera.set_v4l_parameter("sharpness", m_sharpness);
     }
 
     if (m_gain >= 0) {
-      m_camera->set_v4l_parameter("gain", m_gain);
+      m_camera.set_v4l_parameter("gain", m_gain);
     }
 
     // check auto white balance
     if (m_auto_white_balance) {
-      m_camera->set_v4l_parameter("white_balance_temperature_auto", 1);
+      m_camera.set_v4l_parameter("white_balance_temperature_auto", 1);
     } else {
-      m_camera->set_v4l_parameter("white_balance_temperature_auto", 0);
-      m_camera->set_v4l_parameter("white_balance_temperature", m_white_balance);
+      m_camera.set_v4l_parameter("white_balance_temperature_auto", 0);
+      m_camera.set_v4l_parameter("white_balance_temperature", m_white_balance);
     }
 
     // check auto exposure
     if (!m_auto_exposure) {
       // turn down exposure control (from max of 3)
-      m_camera->set_v4l_parameter("m_exposureauto", 1);
+      m_camera.set_v4l_parameter("m_exposureauto", 1);
       // change the exposure level
-      m_camera->set_v4l_parameter("m_exposureabsolute", m_exposure);
+      m_camera.set_v4l_parameter("m_exposureabsolute", m_exposure);
     }
 
     // check auto focus
     if (m_auto_focus) {
-      m_camera->set_auto_focus(1);
-      m_camera->set_v4l_parameter("m_focusauto", 1);
+      m_camera.set_auto_focus(1);
+      m_camera.set_v4l_parameter("m_focusauto", 1);
     } else {
-      m_camera->set_v4l_parameter("m_focusauto", 0);
+      m_camera.set_v4l_parameter("m_focusauto", 0);
       if (m_focus >= 0) {
-        m_camera->set_v4l_parameter("m_focusabsolute", m_focus);
+        m_camera.set_v4l_parameter("m_focusabsolute", m_focus);
       }
     }
   }
