@@ -1,24 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(usb_cam)
 
-# Explicitly declare as catkin package for ROS 1
-if($ENV{ROS_VERSION} EQUAL 1)
-  find_package(catkin REQUIRED COMPONENTS
-    cv_bridge
-    roscpp
-    std_msgs
-    std_srvs
-    sensor_msgs
-    camera_info_manager
-    image_transport)
-    
-  # Add this line to declare it's a catkin package
-  catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES ${PROJECT_NAME}
-  )
-endif()
-
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
