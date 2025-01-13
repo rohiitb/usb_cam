@@ -60,7 +60,7 @@ using utils::io_method_t;
 
 UsbCam::UsbCam()
 : m_device_name(), m_io(io_method_t::IO_METHOD_MMAP), m_fd(-1),
-  m_number_of_buffers(4), m_buffers(new usb_cam::utils::buffer[m_number_of_buffers]), m_image(),
+  m_number_of_buffers(2), m_buffers(new usb_cam::utils::buffer[m_number_of_buffers]), m_image(),
   m_avframe(NULL), m_avcodec(NULL), m_avoptions(NULL),
   m_avcodec_context(NULL), m_is_capturing(false), m_framerate(0),
   m_epoch_time_shift_us(usb_cam::utils::get_epoch_time_shift_us()), m_supported_formats()
@@ -114,6 +114,8 @@ void UsbCam::read_frame()
       m_image.v4l2_fmt.type = buf.type;
       buf.memory = V4L2_MEMORY_MMAP;
 
+      
+
       // Get current v4l2 pixel format
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_G_FMT), &m_image.v4l2_fmt)) {
         switch (errno) {
@@ -123,6 +125,7 @@ void UsbCam::read_frame()
             throw std::runtime_error("Invalid v4l2 format");
         }
       }
+
       /// Dequeue buffer with the new image
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_DQBUF), &buf)) {
         switch (errno) {
@@ -136,17 +139,11 @@ void UsbCam::read_frame()
       // Get timestamp from V4L2 image buffer
       m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
 
-      diff_timestamp_1 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
-      std::cout << "diff_timestamp_1: " << diff_timestamp_1 << std::endl;
-
-      assert(buf.index < m_number_of_buffers);
-      usb_cam::Timer::start("Process image");
-      process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
-      duration = usb_cam::Timer::stop("Process image");
-      std::cout << "duration: " << duration << std::endl;
-
       diff_timestamp_2 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
       std::cout << "diff_timestamp_2: " << diff_timestamp_2 << std::endl;
+
+      assert(buf.index < m_number_of_buffers);
+      process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
 
       /// Requeue buffer so it can be reused
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_QBUF), &buf)) {
