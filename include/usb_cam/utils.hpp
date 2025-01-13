@@ -107,6 +107,10 @@ inline timespec calc_img_timestamp(const timeval & buffer_time, const time_t & e
 {
   timespec img_timestamp;
 
+  std::cout << "buffer_time.tv_sec: " << buffer_time.tv_sec << " s" << std::endl;
+  std::cout << "buffer_time.tv_usec: " << buffer_time.tv_usec / 1000000.0 << " s" << std::endl;
+  std::cout << "epoch_time_shift_us: " << epoch_time_shift_us / 1000000.0 << " s" << std::endl;
+
   int64_t buffer_time_us = (buffer_time.tv_sec * 1000000) + buffer_time.tv_usec;
   buffer_time_us += epoch_time_shift_us;
 
