@@ -78,6 +78,13 @@ struct buffer
   size_t length;
 };
 
+inline double get_time_difference(const timespec & start, const std::chrono::system_clock::time_point & end) {
+  auto end_timespec = std::chrono::system_clock::to_time_t(end);
+  auto end_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+    end.time_since_epoch()).count() % 1000000000;
+  return (end_timespec - start.tv_sec) + (end_ns - start.tv_nsec) / 1e9;
+}
+
 
 /// @brief Get epoch time shift in microseconds
 /// @details Run this at start of process to calculate epoch time shift
@@ -131,14 +138,6 @@ inline int xioctl(int fd, uint64_t request, void * arg)
 
   return r;
 }
-
-inline double get_time_difference(const timespec & start, const std::chrono::system_clock::time_point & end) {
-  auto end_timespec = std::chrono::system_clock::to_time_t(end);
-  auto end_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
-    end.time_since_epoch()).count() % 1000000000;
-  return (end_timespec - start.tv_sec) + (end_ns - start.tv_nsec) / 1e9;
-}
-
 
 inline io_method_t io_method_from_string(const std::string & str)
 {
