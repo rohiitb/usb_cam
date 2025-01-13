@@ -94,7 +94,7 @@ void UsbCam::read_frame()
   struct v4l2_buffer buf;
   unsigned int i;
   int len;
-  double diff_timestamp_1, diff_timestamp_2;
+  double diff_timestamp;
 
   switch (m_io) {
     case io_method_t::IO_METHOD_READ:
@@ -139,8 +139,8 @@ void UsbCam::read_frame()
       // Get timestamp from V4L2 image buffer
       m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
 
-      diff_timestamp_2 = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
-      std::cout << "diff_timestamp_2: " << diff_timestamp_2 << std::endl;
+      diff_timestamp = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
+      std::cout << "diff_timestamp: " << diff_timestamp << std::endl;
 
       assert(buf.index < m_number_of_buffers);
       process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
