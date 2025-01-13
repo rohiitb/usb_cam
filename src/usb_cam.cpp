@@ -94,7 +94,7 @@ void UsbCam::read_frame()
   struct v4l2_buffer buf;
   unsigned int i;
   int len;
-  double duration, diff_timestamp_1, diff_timestamp_2;
+  double diff_timestamp_1, diff_timestamp_2;
 
   switch (m_io) {
     case io_method_t::IO_METHOD_READ:
