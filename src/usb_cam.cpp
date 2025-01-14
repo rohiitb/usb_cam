@@ -638,8 +638,8 @@ void UsbCam::grab_image()
 
   usb_cam::Timer::start("Select");
   r = select(m_fd + 1, &fds, NULL, NULL, &tv);
-  double duration = usb_cam::Timer::stop("Select");
-  std::cout << "Select took " << duration << " seconds" << std::endl;
+  double duration_select = usb_cam::Timer::stop("Select");
+  std::cout << "Select took " << duration_select << " seconds" << std::endl;
 
 
   if (-1 == r) {
