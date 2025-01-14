@@ -212,7 +212,8 @@ void UsbCamNode::init()
 
   // TODO(lucasw) should this check a little faster than expected frame rate?
   // TODO(lucasw) how to do small than ms, or fractional ms- std::chrono::nanoseconds?
-  const int period_ms = 1000.0 / m_parameters.framerate;
+  // const int period_ms = 1000.0 / m_parameters.framerate;
+  const int period_ms = 5;
   m_timer = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
     std::bind(&UsbCamNode::update, this));
