@@ -94,7 +94,8 @@ void UsbCam::read_frame()
   struct v4l2_buffer buf;
   unsigned int i;
   int len;
-  double diff_timestamp;
+  double diff_timestamp, duration_fmt_type, duration_buffer_set;
+
 
   switch (m_io) {
     case io_method_t::IO_METHOD_READ:
@@ -110,12 +111,15 @@ void UsbCam::read_frame()
       return process_image(m_buffers[0].start, m_image.data, len);
     case io_method_t::IO_METHOD_MMAP:
       CLEAR(buf);
+      usb_cam::Timer::start("buffer set time");
       buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
       m_image.v4l2_fmt.type = buf.type;
       buf.memory = V4L2_MEMORY_MMAP;
+      duration_buffer_set = usb_cam::Timer::stop("buffer set time");
+      std::cout << "Buffer set time took " << duration_buffer_set << " seconds" << std::endl;
 
       
-
+      usb_cam::Timer::start("Format check");
       // Get current v4l2 pixel format
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_G_FMT), &m_image.v4l2_fmt)) {
         switch (errno) {
@@ -125,6 +129,8 @@ void UsbCam::read_frame()
             throw std::runtime_error("Invalid v4l2 format");
         }
       }
+      duration_fmt_type = usb_cam::Timer::stop("Format check");
+      std::cout << "Format check took " << duration_fmt_type << " seconds" << std::endl;
 
       /// Dequeue buffer with the new image
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_DQBUF), &buf)) {
