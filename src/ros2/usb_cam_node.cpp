@@ -438,9 +438,9 @@ void UsbCamNode::update()
     // bool isSuccessful = (m_parameters.pixel_format_name == "raw_mjpeg") ?
     //   take_and_send_image_mjpeg() :
     //   take_and_send_image();
-    if (!isSuccessful) {
-      RCLCPP_WARN_ONCE(this->get_logger(), "USB camera did not respond in time.");
-    }
+    // if (!isSuccessful) {
+    //   RCLCPP_WARN_ONCE(this->get_logger(), "USB camera did not respond in time.");
+    // }
   }
 }
 }  // namespace usb_cam
