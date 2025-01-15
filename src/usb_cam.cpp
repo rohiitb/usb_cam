@@ -95,8 +95,6 @@ void UsbCam::read_frame()
   struct v4l2_buffer buf;
   unsigned int i;
   int len;
-  double diff_timestamp, duration_fmt_type, duration_buffer_set;
-
 
   switch (m_io) {
     case io_method_t::IO_METHOD_READ:
@@ -112,15 +110,9 @@ void UsbCam::read_frame()
       return process_image(m_buffers[0].start, m_image.data, len);
     case io_method_t::IO_METHOD_MMAP:
       CLEAR(buf);
-      usb_cam::Timer::start("buffer set time");
       buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
       m_image.v4l2_fmt.type = buf.type;
       buf.memory = V4L2_MEMORY_MMAP;
-      duration_buffer_set = usb_cam::Timer::stop("buffer set time");
-      std::cout << "Buffer set time took " << duration_buffer_set << " seconds" << std::endl;
-
-      
-      usb_cam::Timer::start("Format check");
       // Get current v4l2 pixel format
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_G_FMT), &m_image.v4l2_fmt)) {
         switch (errno) {
@@ -130,8 +122,6 @@ void UsbCam::read_frame()
             throw std::runtime_error("Invalid v4l2 format");
         }
       }
-      duration_fmt_type = usb_cam::Timer::stop("Format check");
-      std::cout << "Format check took " << duration_fmt_type << " seconds" << std::endl;
 
       /// Dequeue buffer with the new image
       if (-1 == usb_cam::utils::xioctl(m_fd, static_cast<int>(VIDIOC_DQBUF), &buf)) {
@@ -145,9 +135,6 @@ void UsbCam::read_frame()
 
       // Get timestamp from V4L2 image buffer
       m_image.stamp = usb_cam::utils::calc_img_timestamp(buf.timestamp, m_epoch_time_shift_us);
-
-      diff_timestamp = usb_cam::utils::get_time_difference(m_image.stamp, std::chrono::system_clock::now());
-      std::cout << "diff_timestamp: " << diff_timestamp << std::endl;
 
       assert(buf.index < m_number_of_buffers);
       process_image(m_buffers[buf.index].start, m_image.data, buf.bytesused);
@@ -643,11 +630,7 @@ void UsbCam::grab_image()
   tv.tv_sec = 5;
   tv.tv_usec = 0;
 
-  usb_cam::Timer::start("Select");
   r = select(m_fd + 1, &fds, NULL, NULL, &tv);
-  double duration_select = usb_cam::Timer::stop("Select");
-  std::cout << "Select took " << duration_select << " seconds" << std::endl;
-
 
   if (-1 == r) {
     if (EINTR == errno) {
@@ -663,10 +646,7 @@ void UsbCam::grab_image()
     std::cerr << "Select timeout, exiting..." << std::endl;
     throw "select timeout";
   }
-  usb_cam::Timer::start("Read frame capture");
   read_frame();
-  double duration = usb_cam::Timer::stop("Read frame capture");
-  std::cout << "Read frame capture took " << duration << " seconds" << std::endl;
 }
 
 // enables/disables auto focus
