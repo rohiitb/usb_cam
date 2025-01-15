@@ -373,10 +373,7 @@ bool UsbCamNode::take_and_send_image()
   }
 
   // grab the image, pass image msg buffer to fill
-  usb_cam::Timer::start("Image capture");
   m_camera->get_image(reinterpret_cast<char *>(&m_image_msg->data[0]));
-  double duration = usb_cam::Timer::stop("Image capture");
-  RCLCPP_INFO(this->get_logger(), "Image capture took %.6f seconds", duration);
 
   auto stamp = m_camera->get_image_timestamp();
 
@@ -387,11 +384,6 @@ bool UsbCamNode::take_and_send_image()
   m_camera_info_msg->header = m_image_msg->header;
 
   m_image_publisher->publish(*m_image_msg, *m_camera_info_msg);
-
-  // Convert timespec to chrono time_point
-  auto current_time = std::chrono::high_resolution_clock::now();
-  auto duration_publish = usb_cam::utils::get_time_difference(stamp, current_time);
-  RCLCPP_INFO(this->get_logger(), "Time difference in publishing: %.6f seconds", duration_publish);
 
   return true;
 }
@@ -405,10 +397,7 @@ bool UsbCamNode::take_and_send_image_mjpeg()
   }
 
   // grab the image, pass image msg buffer to fill
-  usb_cam::Timer::start("Mjpeg Image capture");
   m_camera->get_image(reinterpret_cast<char *>(&m_compressed_img_msg->data[0]));
-  double duration = usb_cam::Timer::stop("Mjpeg Image capture");
-  RCLCPP_INFO(this->get_logger(), "Mjpeg Image capture took %.6f seconds", duration);
 
   auto stamp = m_camera->get_image_timestamp();
 
@@ -420,11 +409,6 @@ bool UsbCamNode::take_and_send_image_mjpeg()
 
   m_compressed_image_publisher->publish(*m_compressed_img_msg);
   m_compressed_cam_info_publisher->publish(*m_camera_info_msg);
-
-  // Convert timespec to chrono time_point
-  auto current_time = std::chrono::high_resolution_clock::now();
-  auto duration_publish = usb_cam::utils::get_time_difference(stamp, current_time);
-  RCLCPP_INFO(this->get_logger(), "Time difference in publishing mjpeg: %.6f seconds", duration_publish);
 
   return true;
 }
