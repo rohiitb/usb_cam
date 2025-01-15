@@ -434,13 +434,12 @@ void UsbCamNode::update()
     // If the camera exposure longer higher than the framerate period
     // then that caps the framerate.
     // auto t0 = now();
-    take_and_send_image();
-    // bool isSuccessful = (m_parameters.pixel_format_name == "raw_mjpeg") ?
-    //   take_and_send_image_mjpeg() :
-    //   take_and_send_image();
-    // if (!isSuccessful) {
-    //   RCLCPP_WARN_ONCE(this->get_logger(), "USB camera did not respond in time.");
-    // }
+    bool isSuccessful = (m_parameters.pixel_format_name == "raw_mjpeg") ?
+      take_and_send_image_mjpeg() :
+      take_and_send_image();
+    if (!isSuccessful) {
+      RCLCPP_WARN_ONCE(this->get_logger(), "USB camera did not respond in time.");
+    }
   }
 }
 }  // namespace usb_cam
