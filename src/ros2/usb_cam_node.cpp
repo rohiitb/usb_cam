@@ -190,7 +190,6 @@ void UsbCamNode::init()
       rclcpp::QoS(1).reliable().get_rmw_qos_profile()));
   }
 
-  m_image_msg->header.frame_id = m_parameters.frame_id;
   RCLCPP_INFO(
     this->get_logger(), "Starting '%s' (%s) at %dx%d via %s (%s) at %i FPS",
     m_parameters.camera_name.c_str(), m_parameters.device_name.c_str(),
