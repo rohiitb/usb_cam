@@ -120,9 +120,6 @@ inline timespec calc_img_timestamp(const timeval & buffer_time, const time_t & e
   img_timestamp.tv_sec = (buffer_time_us / 1000000);
   img_timestamp.tv_nsec = (buffer_time_us % 1000000) * 1000;
 
-  auto buffer_time_diff = usb_cam::utils::get_time_difference(img_timestamp, std::chrono::system_clock::now());
-  std::cout << "buffer_time_diff: " << buffer_time_diff << " s" << std::endl;
-
   return img_timestamp;
 }
 
