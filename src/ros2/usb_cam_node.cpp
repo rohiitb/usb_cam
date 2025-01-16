@@ -43,9 +43,11 @@ namespace usb_cam
 UsbCamNode::UsbCamNode(const rclcpp::NodeOptions & node_options)
 : Node("usb_cam", node_options),
   m_camera(new usb_cam::UsbCam()),
-  m_image_msg(nullptr),
+  m_image_msg(new sensor_msgs::msg::Image()),
   m_compressed_img_msg(nullptr),
-  m_image_publisher(nullptr),
+  m_image_publisher(std::make_shared<image_transport::CameraPublisher>(
+      image_transport::create_camera_publisher(this, BASE_TOPIC_NAME,
+      rclcpp::QoS(1).reliable().get_rmw_qos_profile()))),
   m_compressed_image_publisher(nullptr),
   m_compressed_cam_info_publisher(nullptr),
   m_parameters(),
@@ -169,7 +171,7 @@ void UsbCamNode::init()
   }
 
   // if pixel format is equal to 'mjpeg', i.e. raw mjpeg stream, initialize compressed image message
-  // and publisher otherwise initialize image message and publisher
+  // and publisher
   if (m_parameters.pixel_format_name == "raw_mjpeg") {
     m_compressed_img_msg.reset(new sensor_msgs::msg::CompressedImage());
     m_compressed_img_msg->header.frame_id = m_parameters.frame_id;
@@ -181,13 +183,6 @@ void UsbCamNode::init()
       this->create_publisher<sensor_msgs::msg::CameraInfo>(
       "camera_info", 
       rclcpp::QoS(1).reliable());
-  }
-  else{
-    m_image_msg.reset(new sensor_msgs::msg::Image());
-    m_image_msg->header.frame_id = m_parameters.frame_id;
-    m_image_publisher = std::make_shared<image_transport::CameraPublisher>(
-      image_transport::create_camera_publisher(this, BASE_TOPIC_NAME,
-      rclcpp::QoS(1).reliable().get_rmw_qos_profile()));
   }
 
   m_image_msg->header.frame_id = m_parameters.frame_id;
